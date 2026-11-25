@@ -1,0 +1,10 @@
+{
+  "currency": "USD",
+  "source": "https://aws.amazon.com/lambda/pricing/",
+  "date": "2026-11-09",
+  "region": "us-east-1",
+  "tier": "first",
+  "request_per_million": "0.20",
+  "x86_64_per_gb_second": "0.0000166667",
+  "arm64_per_gb_second": "0.0000133334"
+}

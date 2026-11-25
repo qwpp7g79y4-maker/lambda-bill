@@ -1,0 +1,176 @@
+.TH LAMBDA-BILL 1 "2026-11-19" "lambda-bill 1.0.0" "User Commands"
+.SH NAME
+lambda-bill \- estimate AWS Lambda on-demand cost from CloudWatch REPORT lines
+.SH SYNOPSIS
+.nf
+Estimate AWS Lambda on-demand cost from CloudWatch REPORT lines. Reads files only, no network.
+
+Usage: lambda-bill [OPTIONS] <FILE>...
+
+Arguments:
+  <FILE>...  Log files, gzip exports, directories, or `-` for standard input
+
+Options:
+      --prices <FILE>       Price file. The default is the built-in first-tier on-demand list
+      --arch <ARCH>         Architecture when the file does not say. `x86_64` (default) or `arm64` [default: x86_64]
+      --function <NAME>     Function name when the file does not say one
+      --functions <FILE>    JSON object of function name to architecture (`x86_64` or `arm64`)
+      --headroom <PERCENT>  Percent above the memory base for the advice. An integer from 0 to 100. Default 20 [default: 20]
+      --as-of <DATE>        Date for the price age check as YYYY-MM-DD. Default: today (UTC)
+      --quiet               Print only the result and errors. No warning on standard error
+      --verbose             Also print progress on standard error
+      --output <FILE>       Write the report to this file instead of standard output. An existing regular file is replaced
+      --json                Print JSON instead of the text table
+      --md                  Print a Markdown table instead of the text table
+  -h, --help                Print help
+  -V, --version             Print version
+
+Exit codes: 0 ok, 2 input or usage error, 3 --quiet together with --verbose, 130 SIGINT.
+.fi
+.SH DESCRIPTION
+lambda-bill reads CloudWatch
+.B REPORT
+lines from local files and adds up the on-demand duration and request cost per function, for x86_64 and arm64.
+It also compares Max Memory Used with the configured memory and suggests a different memory setting.
+It reads files only, makes no network call, and uses no AWS SDK.
+.PP
+One
+.B REPORT
+line is one request.
+The duration cost uses Billed Duration and the configured memory, with 1 GB equal to 1024 MB.
+Init Duration is not added again: it is already inside Billed Duration.
+A request id is counted once per function, and the report does not print request ids.
+.PP
+The built-in rates are the first-tier US East (N. Virginia) figures from the AWS Lambda pricing page, read on 2026-11-09.
+Every report names the currency, the source URL, the date, the region label, and the tier.
+The account free tier is not subtracted, and Provisioned Concurrency is not priced.
+.PP
+The advice assumes the billed duration stays the same.
+A smaller memory setting also gives less CPU, so the function can run longer.
+The advice is not a forecast.
+.PP
+A file can be plain text, JSON lines, a CloudWatch export document, or gzip.
+Gzip is recognized by the bytes 1f 8b, not by the file name.
+A directory is walked in sorted path order, and a symlink you name is followed.
+The function name comes from the log group, then a header
+.RB ( "# lambda-bill-function:" ),
+then an
+.I aws/lambda/<name>
+path, then
+.BR --function .
+The default architecture is x86_64, which has the higher rate, so an unknown architecture is not underpriced.
+A file larger than 268435456 bytes and a line longer than 1048576 bytes are rejected.
+A JSON document, a price file and a functions file may hold at most 4000000 JSON values; a larger one is rejected before it is built.
+A run reports at most 100000 function and memory rows (one per function, architecture and memory size); more is rejected with exit 2 and the message \fImore than 100000 function and memory rows\fR.
+An error names the problem and does not print the text of a rejected line.
+.SH OPTIONS
+.TP
+.B <FILE>...
+Log files, gzip exports, directories, or
+.B -
+for standard input.
+At least one is required.
+.TP
+.B --prices \fIFILE\fR
+A price file that replaces the built-in rates.
+It must be a regular UTF-8 file of at most 268435456 bytes.
+The file records its own source URL and date.
+.TP
+.B --arch \fIARCH\fR
+The architecture when the file does not say.
+.B x86_64
+(the default) or
+.BR arm64 .
+.TP
+.B --function \fINAME\fR
+The function name when the file, the log group, and the path do not give one.
+It does not override a detected name.
+.TP
+.B --functions \fIFILE\fR
+A JSON object that maps a function name to
+.B x86_64
+or
+.BR arm64 .
+It does not name the function.
+It must be a regular UTF-8 file of at most 268435456 bytes.
+.TP
+.B --headroom \fIPERCENT\fR
+The percent above the memory base for the advice.
+An integer from 0 to 100.
+The default is 20.
+.TP
+.B --as-of \fIDATE\fR
+The date for the price age check, as YYYY-MM-DD.
+The default is today (UTC).
+When the date of the price file is more than 180 days before it, a warning with that date goes to standard error and the exit status stays 0.
+.TP
+.B --quiet
+Print only the result and errors.
+The warnings on standard error are not printed.
+The report on standard output stays the same.
+.TP
+.B --verbose
+Also print progress on standard error: a line per file argument and a closing line with the number of functions and requests.
+Not allowed together with
+.BR --quiet .
+.TP
+.B --output \fIFILE\fR
+Write the report to this file instead of standard output.
+The report goes to a temporary file in the same directory and is renamed over the target.
+An existing regular file is replaced.
+A symlink, a directory or a device at that path is refused, and a missing directory is not created.
+Any failure exits 2 with one line on standard error.
+.TP
+.B --json
+Print JSON instead of the text table.
+The first key is
+.B schema_version
+(1).
+Money and GB-seconds are strings.
+.TP
+.B --md
+Print a Markdown table with the same amounts instead of the text table.
+A
+.B |
+or a line break inside a cell is escaped.
+Not allowed together with
+.BR --json .
+.TP
+.B -h, --help
+Print the usage text.
+.TP
+.B -V, --version
+Print the version.
+.SH EXIT STATUS
+.TP
+.B 0
+The report was written.
+.TP
+.B 3
+.B --quiet
+and
+.B --verbose
+were both given.
+Nothing is read.
+.TP
+.B 2
+An input or usage error: an unreadable or unsupported file, a line that does not parse, a bad option, or a sum that does not fit in a decimal.
+Standard output that was closed or read-only at start, or a failed write, also exits 2 with a message; this includes
+.B --help
+and
+.BR --version .
+Every message goes to standard error.
+.TP
+.B 130
+Interrupted by SIGINT.
+Nothing is written to standard output.
+Standard error has one line.
+.SH EXAMPLES
+.nf
+lambda-bill examples/sample-report.log
+lambda-bill --json --arch arm64 --function worker examples/arm-report.log
+lambda-bill --function worker --functions examples/functions.json examples/arm-report.log
+lambda-bill examples/export
+.fi
+.SH SEE ALSO
+README.md, QUALITY.md and SECURITY.md in the source tree.

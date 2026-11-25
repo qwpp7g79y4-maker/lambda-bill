@@ -1,0 +1,13 @@
+prices: USD, source https://aws.amazon.com/lambda/pricing/, date 2026-11-09, region us-east-1, tier first
+free tier not applied: the account free tier is 1000000 requests and 400000 GB-seconds per month, shared across architectures, and this export is not the whole account
+provisioned concurrency not included: only on-demand duration and requests are priced
+Estimate from list prices, not your AWS invoice (free tier, credits, discounts not included)
+headroom: 20%
+
+function  architecture  memory_mb  max_used_mb  requests  cold_starts  gb_seconds      duration_usd  request_usd         total_usd  advice
+checkout  x86_64              512           64         2            1      0.0755  0.00000125833585    0.0000004  0.00000165833585  downsize to 128 MB
+total                                                  2            1      0.0755  0.00000125833585    0.0000004  0.00000165833585
+
+estimated_usd=0.00000165833585
+advice checkout x86_64 512 MB: downsize to 128 MB; duration USD 0.00000125833585 -> 0.0000003145839625 if billed duration stays the same
+note: advice assumes billed duration stays the same. Lambda gives CPU in proportion to memory, so a smaller setting can run longer. This is not a forecast.

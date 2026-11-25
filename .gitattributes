@@ -1,0 +1,7 @@
+# Text files use LF on every OS; the tests compare the man page, the README,
+# the example logs and the printed tables byte for byte.
+* text=auto eol=lf
+*.md text eol=lf
+*.1 text eol=lf
+*.log text eol=lf
+*.json text eol=lf

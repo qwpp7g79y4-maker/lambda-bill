@@ -1,0 +1,4 @@
+# lambda-bill-function: checkout
+# lambda-bill-arch: x86_64
+REPORT RequestId: 11111111-1111-1111-1111-111111111111	Duration: 100.00 ms	Billed Duration: 100 ms	Memory Size: 512 MB	Max Memory Used: 40 MB	Init Duration: 200.00 ms	
+REPORT RequestId: 22222222-2222-2222-2222-222222222222	Duration: 50.10 ms	Billed Duration: 51 ms	Memory Size: 512 MB	Max Memory Used: 64 MB	

@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "version": "1.0.0",
+  "currency": "USD",
+  "source": "https://aws.amazon.com/lambda/pricing/",
+  "date": "2026-11-09",
+  "region": "us-east-1",
+  "tier": "first",
+  "estimate": true,
+  "estimate_note": "Estimate from list prices, not your AWS invoice (free tier, credits, discounts not included)",
+  "free_tier_applied": false,
+  "provisioned_concurrency_included": false,
+  "headroom_percent": 20,
+  "advice_note": "advice assumes billed duration stays the same. Lambda gives CPU in proportion to memory, so a smaller setting can run longer. This is not a forecast.",
+  "warnings": [],
+  "functions": [
+    {
+      "function": "worker",
+      "architecture": "arm64",
+      "memory_mb": 128,
+      "max_memory_used_mb": 20,
+      "requests": 1,
+      "cold_starts": 0,
+      "gb_seconds": "0.00125",
+      "duration_usd": "0.00000001666675",
+      "request_usd": "0.0000002",
+      "total_usd": "0.00000021666675",
+      "advice": "keep",
+      "advice_mb": 128,
+      "duration_usd_if_duration_stays": "0.00000001666675"
+    }
+  ],
+  "totals": {
+    "requests": 1,
+    "cold_starts": 0,
+    "gb_seconds": "0.00125",
+    "duration_usd": "0.00000001666675",
+    "request_usd": "0.0000002",
+    "total_usd": "0.00000021666675",
+    "estimated_usd": "0.00000021666675"
+  }
+}
