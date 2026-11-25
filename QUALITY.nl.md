@@ -33,6 +33,15 @@ Suite: 273 tests: 273 geslaagd, 0 mislukt, 0 genegeerd.
 | doc-tests | 0 | 0 | 0 | 0 | 0 | 0 |
 | total | 273 | 0 | 0 | 273 | 0 | 0 |
 
+## Rust 1.85
+
+Gemeten op 2026-11-25 met toolchain 1.85.1 (rustc 1.85.1 (4eb161250 2025-03-15)), in de schone worktree op de commit vóór deze. Alle vier de opdrachten gebruikten `+1.85` en gaven exit 0. Geslaagd, mislukt en genegeerd zijn opgeteld uit de `test result`-regels van alle 10 doelen.
+
+- `cargo +1.85 fmt --check`: exit 0, geen verschillen
+- `cargo +1.85 clippy --all-targets --locked -- -D warnings`: exit 0, geen waarschuwingen
+- `cargo +1.85 test --locked`: exit 0, 273 geslaagd, 0 mislukt, 0 genegeerd
+- `cargo +1.85 test --release --locked`: exit 0, 273 geslaagd, 0 mislukt, 0 genegeerd
+
 ## Niet uitgevoerd
 
 Dit deed deze meting niet. Elk hiervan is not run:

@@ -33,6 +33,15 @@ Suite: 273 tests: 273 passed, 0 failed, 0 ignored.
 | doc-tests | 0 | 0 | 0 | 0 | 0 | 0 |
 | total | 273 | 0 | 0 | 273 | 0 | 0 |
 
+## Rust 1.85
+
+Measured on 2026-11-25 with toolchain 1.85.1 (rustc 1.85.1 (4eb161250 2025-03-15)), in the clean worktree at the commit that precedes this one. All four commands used `+1.85` and exit 0. Passed, failed and ignored are summed from the `test result` lines of all 10 targets.
+
+- `cargo +1.85 fmt --check`: exit 0, no differences
+- `cargo +1.85 clippy --all-targets --locked -- -D warnings`: exit 0, no warnings
+- `cargo +1.85 test --locked`: exit 0, 273 passed, 0 failed, 0 ignored
+- `cargo +1.85 test --release --locked`: exit 0, 273 passed, 0 failed, 0 ignored
+
 ## Not run
 
 This measurement did not do the following. Each is not run:
