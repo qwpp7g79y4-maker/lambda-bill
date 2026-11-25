@@ -1,189 +1,30 @@
 # Quality
 
-The measurements below apply to this commit.
+This commit changes documentation only; the measurements below apply to code commit c5b0ea7.
+
+Measured on 2026-11-25 on c5b0ea7 (origin/main), in a clean worktree. This file replaces the longer earlier record; it states only what this measurement did.
+
+Toolchain: cargo 1.99.0 (5f94df478 2026-08-27), rustc 1.99.0 (b940084d7 2026-09-28), Linux.
 
 Suite: 273 tests: 273 passed, 0 failed, 0 ignored.
 
-Repair of 2026-11-23, finding B1 of the P review of 73df4b1: `looks_like_json_array` in `src/parse.rs` skipped only a space and a tab after the opening bracket, so a cut array with a CR after the bracket (`[`, CR, `{"message":...,"logGroup":"/aws/lambda/other","architecture":"arm64"}`, no closing bracket) was read as text, counted, and billed to `--function f` on x86_64 with exit 0. The code commit 282f8e2 skips a space, tab, CR and LF. A plain bracket line (`[INFO]`, `[ERROR]`, `[WARNING]`, `[main]`, `[YYYY-MM-DD`) stays text. Same files before (tip 73df4b1) and after (282f8e2), release build, `lambda-bill --function f <file>`, output filtered to the error line, the table rows and the exit code. `base.json` is the cut array without the CR, `c.json`, `spcr.json` and `tabcr.json` have CR, space+CR and tab+CR after the bracket, `valid.json` is the closed array with CR, `text.log` has `[INFO]`, `[main]` and `[2024-01-01]` lines around a REPORT.
-
-Before, on 73df4b1:
-
-```
-== base.json
-lambda-bill: base.json: line 1: not JSON
-exit 2
-== c.json
-function  architecture  memory_mb  max_used_mb  requests  cold_starts  gb_seconds    duration_usd  request_usd       total_usd  advice
-total                                                  1            0        0.05  0.000000833335    0.0000002  0.000001033335
-advice f x86_64 512 MB: downsize to 128 MB; duration USD 0.000000833335 -> 0.00000020833375 if billed duration stays the same
-exit 0
-== spcr.json
-function  architecture  memory_mb  max_used_mb  requests  cold_starts  gb_seconds    duration_usd  request_usd       total_usd  advice
-total                                                  1            0        0.05  0.000000833335    0.0000002  0.000001033335
-advice f x86_64 512 MB: downsize to 128 MB; duration USD 0.000000833335 -> 0.00000020833375 if billed duration stays the same
-exit 0
-== tabcr.json
-function  architecture  memory_mb  max_used_mb  requests  cold_starts  gb_seconds    duration_usd  request_usd       total_usd  advice
-total                                                  1            0        0.05  0.000000833335    0.0000002  0.000001033335
-advice f x86_64 512 MB: downsize to 128 MB; duration USD 0.000000833335 -> 0.00000020833375 if billed duration stays the same
-exit 0
-== valid.json
-function  architecture  memory_mb  max_used_mb  requests  cold_starts  gb_seconds   duration_usd  request_usd      total_usd  advice
-other     arm64               512           40         1            0        0.05  0.00000066667    0.0000002  0.00000086667  downsize to 128 MB
-total                                                  1            0        0.05  0.00000066667    0.0000002  0.00000086667
-advice other arm64 512 MB: downsize to 128 MB; duration USD 0.00000066667 -> 0.0000001666675 if billed duration stays the same
-exit 0
-== text.log
-function  architecture  memory_mb  max_used_mb  requests  cold_starts  gb_seconds    duration_usd  request_usd       total_usd  advice
-total                                                  1            0        0.05  0.000000833335    0.0000002  0.000001033335
-exit 0
-```
-
-After, on 282f8e2:
-
-```
-== base.json
-lambda-bill: base.json: line 1: not JSON
-exit 2
-== c.json
-lambda-bill: c.json: line 1: not JSON
-exit 2
-== spcr.json
-lambda-bill: spcr.json: line 1: not JSON
-exit 2
-== tabcr.json
-lambda-bill: tabcr.json: line 1: not JSON
-exit 2
-== valid.json
-function  architecture  memory_mb  max_used_mb  requests  cold_starts  gb_seconds   duration_usd  request_usd      total_usd  advice
-other     arm64               512           40         1            0        0.05  0.00000066667    0.0000002  0.00000086667  downsize to 128 MB
-total                                                  1            0        0.05  0.00000066667    0.0000002  0.00000086667
-advice other arm64 512 MB: downsize to 128 MB; duration USD 0.00000066667 -> 0.0000001666675 if billed duration stays the same
-exit 0
-== text.log
-function  architecture  memory_mb  max_used_mb  requests  cold_starts  gb_seconds    duration_usd  request_usd       total_usd  advice
-total                                                  1            0        0.05  0.000000833335    0.0000002  0.000001033335
-exit 0
-```
-
-Wanted: `c.json`, `spcr.json` and `tabcr.json` exit 2 with `not JSON` and count nothing (they were exit 0, 1 request, function f, x86_64); `base.json` stays exit 2; `valid.json` and `text.log` stay exit 0 as before. Suite on 282f8e2: 273 tests, 273 passed. The existing test `a_bracket_prefix_that_is_not_json_stays_text_and_a_cut_array_is_not_json` now also has seven cut arrays with CR; with the old `src/parse.rs` it failed (`assertion left == right failed ... left: 0, right: 2`), with the fix it passes. Clippy `-D warnings` and `cargo fmt --check` are clean. Still open: the same review lists other first characters after the bracket (`\f`, `\v`, no-break space, zero-width space, NUL, BOM) that this repair does not touch; the limit `[1,2] x` stays as before. This is a repair, not a final verdict.
-
-Repair of 2026-11-23, finding of the review of 0a1ebb8: since 080dab6 every line that starts with `[` and is not JSON and not `[YYYY-MM-DD` was `not JSON` (exit 2), so a plain `[INFO]` line stopped the whole directory, while the CHANGELOG says such a line is text. The code commit e710e44 reads a `[` line that is not JSON as text unless it opens like a JSON array (`{`, `[`, `]`, `"`, `true`/`false`/`null`, a number-only run, or nothing after the bracket). The same four files, `lambda-bill --json <file>`, output filtered to the error line and the `"requests"` line, release build, literal output.
-
-Before, on 0a1ebb8:
-
-```
-== info.log
-   | # function: f
-   | [INFO] start
-   | REPORT RequestId: a1 Duration: 100.00 ms Billed Duration: 100 ms Memory Size: 128 MB Max Memory Used: 64 MB
-   | [ERROR] x
-   | [WARNING] y
-   | [main] z
-lambda-bill: info.log: line 2: not JSON
-exit 2
-== cut.log
-   | # function: f
-   | REPORT RequestId: a1 Duration: 100.00 ms Billed Duration: 100 ms Memory Size: 128 MB Max Memory Used: 64 MB
-   | [{"message":"REPORT RequestId: a1 Duration: 100.00 ms Billed Duration: 100 ms Memory Size: 128 MB Max Memory Used: 
-lambda-bill: cut.log: line 3: not JSON
-exit 2
-== nobracket.log
-   | # function: f
-   | REPORT RequestId: a1 Duration: 100.00 ms Billed Duration: 100 ms Memory Size: 128 MB Max Memory Used: 64 MB
-   | [{"message":"x"}
-lambda-bill: nobracket.log: line 3: not JSON
-exit 2
-== date.log
-   | # function: f
-   | [2024-01-01] REPORT RequestId: a1 Duration: 100.00 ms Billed Duration: 100 ms Memory Size: 128 MB Max Memory Used: 
-    "requests": 1,
-exit 0
-```
-
-After, on e710e44:
-
-```
-== info.log
-   | # function: f
-   | [INFO] start
-   | REPORT RequestId: a1 Duration: 100.00 ms Billed Duration: 100 ms Memory Size: 128 MB Max Memory Used: 64 MB
-   | [ERROR] x
-   | [WARNING] y
-   | [main] z
-    "requests": 1,
-exit 0
-== cut.log
-   | # function: f
-   | REPORT RequestId: a1 Duration: 100.00 ms Billed Duration: 100 ms Memory Size: 128 MB Max Memory Used: 64 MB
-   | [{"message":"REPORT RequestId: a1 Duration: 100.00 ms Billed Duration: 100 ms Memory Size: 128 MB Max Memory Used: 
-lambda-bill: cut.log: line 3: not JSON
-exit 2
-== nobracket.log
-   | # function: f
-   | REPORT RequestId: a1 Duration: 100.00 ms Billed Duration: 100 ms Memory Size: 128 MB Max Memory Used: 64 MB
-   | [{"message":"x"}
-lambda-bill: nobracket.log: line 3: not JSON
-exit 2
-== date.log
-   | # function: f
-   | [2024-01-01] REPORT RequestId: a1 Duration: 100.00 ms Billed Duration: 100 ms Memory Size: 128 MB Max Memory Used: 
-    "requests": 1,
-exit 0
-```
-
-Wanted: `info.log` text and exit 0 (it was exit 2), `cut.log` and `nobracket.log` stay exit 2 and count nothing, `date.log` stays text and exit 0. Suite on e710e44: 273 tests, 273 passed; the new test is `a_bracket_prefix_that_is_not_json_stays_text_and_a_cut_array_is_not_json`, and `a_plain_line_with_a_glued_marker_is_ignored_and_a_json_line_with_one_is_an_error` now expects `not a Lambda REPORT line` for `[ts] x<marker>` (still exit 2, empty standard output). Not repaired, still open: many small gzip files, and `--md` with file names. Limit: a text line such as `[1,2] x` or `[true] x` opens like an array and is still `not JSON`.
-
-This commit changes documentation only. Every number below says on which commit it was measured; a row that did not run again says so.
-
-Record of 2026-11-23, code commit e35a324 (`src/`, `tests/` and the manifest are the same as on 40aa20a and fe0a063; the commits after e35a324 change documents only). Linux x86_64, rustc 1.99.0 and cargo 1.99.0 (stable). Measured on e35a324 for this record: debug `cargo test --locked --offline`: 271 passed, 0 failed, 0 ignored, of which `cargo test --locked --offline --lib` printed 66 passed; `cargo fmt --check` and `cargo clippy --locked --offline --all-targets -- -D warnings`: exit 0. Measured on fe0a063 by the final review: `cargo fmt --check`, clippy, the debug and the release test run (271 passed, 0 failed each), `cargo package` and `cargo deny`; `cargo +1.85` only compiled the tests (`--no-run`), the 1.85 tests: not run. Every other row below is the record of 2026-11-20 on commit 2d51303 (269 tests then) and did not run again. CI for this commit: not run. Every check that was skipped is listed once, under Not run below. No tag, no publish, no push.
-
-Red for green, 2026-11-23, finding B-1 of the final review: a line that starts with `[`, is not a `[YYYY-MM-DD` bracket timestamp and is not JSON went to the text parser, so a cut array lost its `logGroup` and `architecture` and was billed to `--function` on x86_64 with exit 0. The new test `a_broken_json_array_line_is_not_json_and_a_valid_one_keeps_its_envelope` first ran against the code of 61a50a1 and failed: `thread 'a_broken_json_array_line_is_not_json_and_a_valid_one_keeps_its_envelope' panicked at tests/cli.rs:2357:9: assertion `left == right` failed: cut`, `left: 0`, `right: 2`, `test result: FAILED. 0 passed; 1 failed`. With the fix in `src/parse.rs` (commit 080dab6) it passes, and the test `a_big_text_log_that_starts_with_a_bracket_is_not_counted_as_json` stays green. Debug `cargo test --locked --offline --no-fail-fast` on 080dab6: 272 tests, 271 passed, 1 failed: `the_documents_state_the_real_number_of_tests`, because README.md and README.nl.md still say 271; the test rows of the tables below are the numbers of e35a324. Two existing tests (`a_plain_line_with_a_glued_marker_is_ignored_and_a_json_line_with_one_is_an_error`, `uncounted_report_marker_in_json_or_bracket_line_exits_2`) now expect `not JSON` for a bracket line that is no timestamp; the exit code is 2 and standard output is empty, as before.
-
-Red for green, 2026-11-23, on a throwaway copy outside this repository: `MAX_JSON_UNITS` in `src/budget.rs` was changed from 4_000_000 to 400_000_000. `a_json_document_with_too_many_values_is_refused_before_it_is_built` then failed (`tests/cli.rs:2260:5`, `lambda-bill: /big.json: event 1: not a log event`, `test result: FAILED. 0 passed; 1 failed`). With the change undone it passed again. The copy is not in the repository.
-
-Tests do not depend on the system clock: each test that runs the binary passes a fixed `--as-of 2026-11-20` (or its own date). Proof, run before the fix: in a copy of the tree, `src/money.rs` (`today_utc`) was changed to run the clock 400 days ahead, and `cargo test --no-fail-fast` then failed at least 27 tests in `tests/cli.rs` (`assertion failed: stderr.is_empty()` and others). With the fix, the same copy passes all tests (the 258 at the time).
-
 ## Commands
 
-The column Measured on of this table says on which commit each row last ran: e35a324 (run for this record, with `-j 2` and `--test-threads 2`), fe0a063 (the final review) or 2d51303 (the record of 2026-11-20, not repeated; see Not run).
-
-| Command | Exit | Measured on |
-| --- | ---: | --- |
-| `cargo fmt --check` | 0 | e35a324 and fe0a063 (final review) |
-| `cargo clippy --locked --offline --all-targets -- -D warnings` (stable) | 0 | e35a324 and fe0a063 (final review) |
-| `cargo +1.85 clippy --locked --offline --all-targets -- -D warnings` | 0 | 2d51303 |
-| `cargo check --locked --offline --tests --target x86_64-pc-windows-gnu` | 0 | 2d51303 |
-| `cargo check --locked --offline --tests --target x86_64-apple-darwin` | 0 | 2d51303 |
-| `cargo check --locked --offline --tests --target x86_64-unknown-linux-musl` | 0 | 2d51303 |
-| `cargo clippy --locked --offline --all-targets --target x86_64-pc-windows-gnu -- -D warnings` | 0 | 2d51303 |
-| `cargo clippy --locked --offline --all-targets --target x86_64-apple-darwin -- -D warnings` | 0 | 2d51303 |
-| `cargo clippy --locked --offline --all-targets --target x86_64-unknown-linux-musl -- -D warnings` | 0 | 2d51303 |
-| `cargo test --locked --offline` (debug) | 0 | e35a324 and fe0a063 (final review) |
-| `cargo test --locked --offline --lib` (66 passed) | 0 | e35a324 |
-| `cargo test --locked --offline --release` | 0 | fe0a063 (final review) |
-| `cargo +1.85 test --locked --offline` (debug) | 0 | 2d51303 (on fe0a063 the tests were only compiled) |
-| `cargo +1.85 test --locked --offline --no-run` | 0 | fe0a063 (final review) |
-| `cargo package --locked --offline --allow-dirty --no-verify --list` | 0 | fe0a063 (final review) |
-| `cargo package --locked --offline --allow-dirty --no-verify`, then `cargo test --offline` in the unpacked crate | 0 | 2d51303 |
-| `bash scripts/check-glibc.sh target/release/lambda-bill 2.34` | 0 | 2d51303 |
-| `cargo deny --locked check licenses` | 0 | fe0a063 (final review) |
-| `cargo audit --no-fetch` | 0 | 2d51303 |
-
-The Windows, macOS and musl rows compile the code and the tests and run clippy. Nothing was run on those targets. `cargo deny` printed `licenses ok`. `cargo audit` read 1527 advisories (database of the machine, not refreshed) for 76 crates and reported none. `check-glibc.sh` printed `highest GLIBC symbol: 2.34 (allowed: 2.34)` for the release binary of this machine. On 2d51303 the unpacked crate gave the same test counts as that commit, in a directory without `.github/` and `scripts/`.
-
-`cargo package --list` has 50 lines: `.cargo_vcs_info.json`, `.gitignore`, `CHANGELOG.md`, `CONTRIBUTING.md`, `Cargo.lock`, `Cargo.toml`, `Cargo.toml.orig`, both licenses, `QUALITY.md`, `QUALITY.nl.md`, `README.md`, `README.nl.md`, `SECURITY.md`, `about.hbs`, `about.toml`, `build.rs`, `deny.toml`, `examples/*` (ten files: the README, the logs, the functions map and four expected outputs, with the two export members), `man/lambda-bill.1`, `prices/lambda-ondemand.json`, `src/*.rs` (thirteen files) and `tests/*.rs` (seven files). `.github/`, `.gitattributes` and `scripts/` are excluded (the manifest names them in `exclude`).
+| Command | Result |
+| --- | --- |
+| `cargo fmt --check` | exit 0, no differences |
+| `cargo clippy --all-targets --locked -- -D warnings` | exit 0, no warnings |
+| `cargo test --locked` | exit 0, 273 passed, 0 failed, 0 ignored |
+| `cargo test --release --locked` | exit 0, 273 passed, 0 failed, 0 ignored |
 
 ## Test result per target
-
-Debug (`cargo test --locked --offline`) on e35a324 gave the counts below; the lib row is what `cargo test --locked --offline --lib` printed (66). The release column is the count of the final review on fe0a063 (`--release`, same sources), not repeated for this record. The tests of `cargo +1.85`: not run on this tree.
 
 | Target | Debug passed | Debug failed | Debug ignored | Release passed | Release failed | Release ignored |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | unittests `src/lib.rs` | 66 | 0 | 0 | 66 | 0 | 0 |
 | unittests `src/main.rs` | 0 | 0 | 0 | 0 | 0 | 0 |
 | `tests/claims.rs` | 39 | 0 | 0 | 39 | 0 | 0 |
-| `tests/cli.rs` | 139 | 0 | 0 | 139 | 0 | 0 |
+| `tests/cli.rs` | 140 | 0 | 0 | 140 | 0 | 0 |
 | `tests/documented_shapes.rs` | 9 | 0 | 0 | 9 | 0 | 0 |
 | `tests/docs_clean.rs` | 3 | 0 | 0 | 3 | 0 | 0 |
 | `tests/handbook_help.rs` | 1 | 0 | 0 | 1 | 0 | 0 |
@@ -192,98 +33,19 @@ Debug (`cargo test --locked --offline`) on e35a324 gave the counts below; the li
 | doc-tests | 0 | 0 | 0 | 0 | 0 | 0 |
 | total | 273 | 0 | 0 | 273 | 0 | 0 |
 
-## Standard output closed, read-only or full
-
-`src/stdout_probe.rs` recognizes a standard output that was closed, or open for reading only, when the program started. Rust gives a closed file descriptor 1 back as `/dev/null` (read and write) before `main`, and its standard output ignores the error of a write to a descriptor that is not open for writing. So afterwards `>&-` looks like `1<>/dev/null` and `1<file` looks like a working output. On Linux, a constructor in `.init_array` runs earlier and records the state of descriptor 1. `src/main.rs` then refuses to write and exits 2. On other systems the probe always says "writable". Its `unsafe` code is two read-only `fcntl(1, ...)` calls (`F_GETFD`, `F_GETFL`). The only other `unsafe` code is the SIGINT handler in `src/interrupt.rs` (see SECURITY.md).
-
-Measured on 2026-11-19 with `examples/sample-report.log`. The debug and the release binary gave the same exit code and message in every row.
-
-| Command | Exit | Standard error |
-| --- | ---: | --- |
-| `lambda-bill examples/sample-report.log >&-` | 2 | `lambda-bill: could not write output` |
-| `lambda-bill examples/sample-report.log >/dev/full` | 2 | `lambda-bill: could not write output` |
-| `lambda-bill examples/sample-report.log >/dev/null` | 0 | none |
-| `bash -c 'lambda-bill examples/sample-report.log 1<>/dev/null'` | 0 | none |
-| `lambda-bill examples/sample-report.log 1<examples/sample-report.log` | 2 | `lambda-bill: could not write output` |
-| `lambda-bill examples/sample-report.log 1<.` | 2 | `lambda-bill: could not write output` |
-| `lambda-bill --json examples/sample-report.log >&-` | 2 | `lambda-bill: could not write output` |
-| `python3 -I -c '... subprocess.run([...], stdout=subprocess.DEVNULL)'` | 0 | none |
-| `lambda-bill examples/sample-report.log \| true` (10 runs) | 2 each | `lambda-bill: could not write output` |
-| `lambda-bill --help >&-` | 2 | `lambda-bill: stdout is not writable` |
-| `lambda-bill --version >&-` | 2 | `lambda-bill: stdout is not writable` |
-| `lambda-bill --help >/dev/full` | 2 | `lambda-bill: stdout is not writable` |
-| `lambda-bill --version >/dev/full` | 2 | `lambda-bill: stdout is not writable` |
-| `lambda-bill --help 1<examples/sample-report.log` | 2 | `lambda-bill: stdout is not writable` |
-| `lambda-bill --help >/dev/null` | 0 | none |
-| `lambda-bill --version 1<>/dev/null` | 0 | none |
-| `lambda-bill --help \| true` (10 runs) | 2 each | `lambda-bill: stdout is not writable` |
-| `lambda-bill --version \| true` (10 runs) | 2 each | `lambda-bill: stdout is not writable` |
-
-`python3` with `stdout=subprocess.DEVNULL` gave exit 0 and 0 bytes of standard error for the report, `--help` and `--version`. The same rows with `/proc` replaced by an empty `tmpfs` (`unshare -Urm`) gave the same exit codes: `>&-` 2, `>/dev/null` 0, `1<>/dev/null` 0, `--help >&-` 2, `--help >/dev/null` 0. No run panicked. Whether a closed pipe fails the write depends on when the reader exits. The tests `closed_stdout_exits_2_without_panic`, `dev_full_stdout_exits_2`, `read_only_stdout_exits_2`, `help_and_version_to_unwritable_stdout_exit_2`, `dev_null_stdout_exits_0` and `read_write_dev_null_is_not_a_closed_stdout` (`tests/cli.rs`, Linux only) cover the `>&-`, `/dev/full`, `1<file`, `/dev/null`, `1<>/dev/null`, `--help` and `--version` rows. The `DEVNULL`, `/proc`-less and `| true` rows have no test.
-
-## Usage errors
-
-A usage error that clap prints keeps its line breaks and ends with a line break. Measured with the release binary: `lambda-bill --headroom $'1\x1b[31m\nFAKE: line' examples/sample-report.log` and `lambda-bill $'--x\x1b[31m\nFAKE: line' examples/sample-report.log` both exit 2 and print the argument as `\u{1b}[31m\u{a}FAKE: line` inside clap's own lines, with no line that starts with `FAKE` and no ESC byte. An argument that is not valid UTF-8 (`--function $'a\xff\x1b[31m\nFAKE: line'`) gives clap's own message, which does not repeat it, in three lines plus the usage block, ending with a line break (`clap_error_for_a_non_utf8_argument_keeps_its_lines_and_has_no_fake_line`, Linux only). Tests: `clap_errors_keep_their_line_breaks`, `clap_error_with_escape_and_newline_in_an_argument_has_no_fake_line`, `clap_error_escapes_cr_bidi_and_invisible_characters_on_one_line`.
-
-## Red before, green after
-
-Run on 2026-11-19 against commit dc217f5 (the tests of this state, the sources of dc217f5), then against this state.
-
-| Test | dc217f5 | This state |
-| --- | --- | --- |
-| `an_escaped_marker_in_a_field_that_is_not_read_is_an_error` | fails: `REPORT\u0020RequestId:` in `@message` gives exit 0 and one request | passes |
-| `a_fifo_as_prices_or_functions_file_is_not_a_file_and_does_not_hang` | fails: the run is still blocked after 5 s | passes |
-| `two_different_log_group_names_in_one_object_are_named_in_the_error` | fails: the message says the log group is not `/aws/lambda/<name>` | passes |
-| `a_json_document_with_too_many_values_is_refused_before_it_is_built` | fails: `[[0],...]` of 16400005 bytes is built in full and ends as `not a log event`, no budget error | passes |
-| `a_small_gzip_file_cannot_expand_into_too_many_values` | fails: the same text inside a gzip file of under 100000 bytes is built in full | passes |
-| `a_prices_or_functions_file_with_too_many_values_is_refused` | fails: a `--prices` file with 4100000 extra arrays is accepted, exit 0 | passes |
-
-The other tests added in this state (`billed_duration_and_memory_fields_are_limited_by_their_text_length`, `text_before_a_json_line_makes_it_text_and_its_marker_does_not_count`, `a_function_header_after_the_first_report_still_names_the_whole_file`, `a_duplicate_request_id_with_other_values_is_only_counted_as_a_duplicate`, the guard `a_big_text_log_that_starts_with_a_bracket_is_not_counted_as_json`, the three unit tests in `src/budget.rs`, and the two new tests in `tests/docs_clean.rs`) pin behavior that already existed and is now documented, so they pass on dc217f5 as well. On commit a7d2dd6, before the exact-decimal change, `a_duration_that_needs_more_than_28_digits_exits_2`, `a_product_beyond_28_digits_is_an_error`, `gb_seconds_quotient_beyond_28_digits_is_an_error`, `a_sum_of_exact_rows_that_does_not_fit_exits_2` and `open_finding_half_away_from_zero` exited 0 and printed a rounded amount. They now exit 2. `an_advice_amount_that_is_not_exact_exits_2` keeps an exact row and refuses the raised advice amount. `one_gb_second_at_scale_28_is_exact` keeps one GB-second at `10^-28`. That same commit, with `TMPDIR` set to an empty directory whose path ends in `t512//`, already passed 213 tests and failed none. `tests/docs_clean.rs` and `tests/handbook_help.rs` were shown to fail on a copy: a forbidden word planted in `src/` and in the workflow gave `forbidden text in [...]`, a long option removed from the OPTIONS section of the man page gave `long options in man/lambda-bill.1 must be exactly those in --help`, and a removed option in the usage block gave `man page SYNOPSIS must contain the --help stdout verbatim`.
-
 ## Not run
 
-- A fuzz campaign.
-- A mutation run.
-- `cargo audit` with a refreshed advisory database (no network was used).
-- The rows of the Commands table whose Measured on column says 2d51303 (the 1.85 clippy and test rows, the Windows, macOS and musl rows, the unpacked-crate test, `check-glibc.sh` and `cargo audit`): not run on this commit. The tests of `cargo +1.85`: not run, only compiled on fe0a063.
-- GitHub Actions: neither `.github/workflows/ci.yml` nor `.github/workflows/release.yml` has run, because of the payment problem on the account. So the `glibc` job (Ubuntu 22.04), the time limits, the release build on five targets, the archive smoke test and the CI badge in the README have no result. The glibc figure above comes from this machine, and the release workflow was only checked as YAML.
-- `directory_at_64_levels_is_accepted` builds a path of several hundred characters; on Windows it was not run.
-- Any test on Windows, macOS or musl. Only the compile and clippy rows above ran there. The closed-standard-output tests and the tests with an ESC byte in a file name are Linux only, the symlink tests are Unix only, and the probe reports "writable" on other systems.
-- `git push`, `git tag` and `cargo publish`: nothing was pushed, tagged or published. The commits are local, so the default branch on GitHub does not show this hash yet.
-- The commands of `README.md` Quick start with the installed binary (`cargo install`): the test runs the same bytes through the test binary.
-- `cargo test` with `--ignored`: the suite has no ignored test.
+This measurement did not do the following. Each is not run:
 
-## Known limits
-
-- This page records checks. It is not a guarantee and it is not a fuzz report.
-- A closed or read-only standard output is recognized on Linux only. Elsewhere it is not detected, and the write itself decides.
-- `lambda-bill ... | true` exits 2 when the reader has already closed the pipe at the write. A reader that closes later may see exit 0. No test pins this.
-- Memory: every file is read into memory, and all input files of one run together are limited to 268435456 bytes (`all_input_files_together_are_limited_to_the_file_limit`). A JSON document, a `--prices` file and a `--functions` file are counted before they are built and refused over 4000000 values (`a_json_document_with_too_many_values_is_refused_before_it_is_built`, `a_small_gzip_file_cannot_expand_into_too_many_values`, `a_prices_or_functions_file_with_too_many_values_is_refused`). Measured with the release binary at this budget (4000000), peak memory of documents at the budget that were then rejected as not log events: 3990000 scalars (7999981 bytes) 424108 KB, 0.6 s; 1998999 object keys (24875884 bytes) 623372 KB, 2.3 s; 280000 events with four fields (19040001 bytes) 356556 KB, 0.7 s. At the old budget of 20000000 values the same kinds took up to 2846368 KB and 17.2 s. So a document at the budget needs well under 1 GB and a few seconds. Over the budget the refusal took 0.5 to 0.8 s and under 200 MB (`[0,...]` of 100000001 bytes 197076 KB; `[[0],...]` of 100000001 bytes 197900 KB; a gzip file of 657179 bytes with 170 MB of nested arrays 174724 KB). Before the budget the first two needed 5148 MB and 9916 MB. No test measures the memory itself; the tests check the refusal.
-- A gzip file is limited to 1000000 members (`a_gzip_file_with_too_many_members_is_refused`); before, 13000000 empty members and one real member (260000109 bytes) took 39.3 s with exit 0. The number of rows is limited too (next item).
-- A run reports at most 100000 rows (one per function, architecture and memory size). More is `more than 100000 function and memory rows`, exit 2, also with `--json`; this is pinned by `a_run_with_too_many_functions_is_refused`. The limit replaces the earlier open point about files with very many functions; no timing was taken for this record.
-- A JSON line is limited by the line limit (1048576 bytes), not by the value budget. Such a line is built and freed one at a time.
-- The crate is not published and has no tag, so no release archive exists (the release workflow: see Not run).
-- Lambda's JSON log format (`type: platform.report` records) is not read. Such a record is skipped without a message, and its request is not counted (`platform_report_records_are_not_read`).
-- A pretty-printed JSON object that is neither a CloudWatch event nor has `@message` or `Message` is rejected as `line 1: not JSON`. A text log with a line such as `{'a': 1}` is rejected as a whole, on purpose.
-- A GB-second, a duration amount, a request amount, an advice amount and a total are stored only when they are already an exact 96-bit decimal (coefficient at most 79228162514264337593543950335, at most 28 digits after the decimal point). Multiplication and division keep every digit. Anything else is `price overflow`, exit 2. Nothing is rounded. Two requests at 79228162514264337593543950335 USD per million fit (`158456325028528675187087.90067`, `widest_request_rate_is_exact_for_one_and_two_requests`). One GB-second at `10^-28` USD stays exact (`one_gb_second_at_scale_28_is_exact`). 10240 MB for 18446744073709551615 ms at 1000000000000 USD per GB-second does not (`huge_price_is_an_input_error`).
-- A path that is literally named `bad\xff\xfe.log` is shown the same way as a path with the bytes ff and fe.
-- The total is the exact sum of the row amounts. A sum that is not an exact decimal is `price overflow`. The table shows the stored decimal (for example `0.00000165833585`) and does not round it again.
-- "No network call" is checked through the dependency list (`cargo tree -e normal`), a search of `src/` for socket and process calls (the only file writes are the temporary file, the rename and the clean-up of `--output` in `write_output_file`, `src/main.rs`; `build.rs` runs `git` at build time), and `claim_c17_no_aws_sdk_and_no_network`. No test watches system calls.
-- The test count in `README.md` and in this file is compared with the number of test attributes in `src/` and `tests/` (`tests/quality.rs`), not with the output of `cargo test`.
-- A GB-second quotient that is not an exact decimal is `price overflow`, exit 2. Measured: 18446744073709551615 ms at 1023 MB (`gb_seconds_quotient_beyond_28_digits_is_an_error`). It used to be stored rounded. Lambda's longest invocation is 900000 ms.
-- A product, a sum or an advice amount that is not an exact decimal is `price overflow`, exit 2. Measured: 1000 MB for 1 ms at `1000000000000000000000001` USD per GB-second is exactly `976562500000000000000.0009765625` (`a_duration_that_needs_more_than_28_digits_exits_2`); 128 MB for 1000 ms at `7922816251426433759354395033` is exactly `990352031428304219919299379.125` (`a_product_beyond_28_digits_is_an_error`); 512 MB for 1000 ms at `79228162514264337593543950333` is exactly `39614081257132168796771975166.5` (`open_finding_half_away_from_zero`); one row of `39614081257132168796771975168` plus one row of `0.50` (`a_sum_of_exact_rows_that_does_not_fit_exits_2`); the advice amount for a raise from 1024 MB to 1229 MB at `1237940039285380274899124224.5` USD per GB-second, while that row itself fits (`an_advice_amount_that_is_not_exact_exits_2`). With the built-in rates and real billed durations this does not show.
-- Billed Duration is read with up to 20 characters and Memory Size and Max Memory Used with up to 10, by length and not by value (`billed_duration_and_memory_fields_are_limited_by_their_text_length`). Two rows of 18446744073709551615 ms in one function, architecture and memory are `billed duration overflow` (`billed_duration_overflow_is_an_error`).
-- Text in front of a JSON line (a byte-order mark, a comma, `data: `, a timestamp) makes the line plain text; the marker in it is glued to a quote and does not count. Measured: line 1 `{"message":"REPORT RequestId: a1 ..."}` and line 2 the same with `2026-11-19T10:00:00Z ` in front give `"requests": 1` and exit 0 (`text_before_a_json_line_makes_it_text_and_its_marker_does_not_count`). Product decision, open point: refuse such a line, or read it.
-- A `# function:` header after the first REPORT still names the whole file; two different headers are `function name conflict` (`a_function_header_after_the_first_report_still_names_the_whole_file`).
-- A RequestId twice for one function with other memory or duration values counts once, the first wins, and the warning only counts duplicates (`a_duplicate_request_id_with_other_values_is_only_counted_as_a_duplicate`). Product decision, open point: warn when the values differ.
-- A file of 268435456 empty lines took 3.3 s and 526208 KB with the release binary (17.9 s with the binary of dc217f5, which built a label for every line). The memory is the file twice, as bytes and as text. No test measures time.
-- The `--prices` and `--functions` files must be regular files; a FIFO or `<(command)` is `not a file` (`a_fifo_as_prices_or_functions_file_is_not_a_file_and_does_not_hang`, Unix only).
-- A field repeated after the four fixed fields of a REPORT line is trailing text and ignored; the first counts (`a_repeated_field_after_the_fixed_fields_is_trailing_text_and_the_first_counts`).
-- `--headroom +5` and `--headroom 05` are accepted as 5 (`headroom_accepts_a_plus_sign_and_leading_zeros`).
-- A usage error for an argument that is not UTF-8 is clap's own text, not the escaped render; it does not repeat the argument.
-- "Not published and no git tag" is a repository fact. No test checks it.
-- The system requirements in `README.md` (glibc 2.34 for a release build on Linux x86_64) were read with `objdump -T` on 2026-11-19 for an earlier build. No test checks them, and no musl, Windows or macOS binary was run.
-- The README claims that have no test, or only part of one, are marked in the table below.
+- cargo deny: not run
+- cargo audit: not run
+- cargo llvm-cov (coverage): not run
+- cargo mutants (mutation testing): not run
+- cargo fuzz: not run
+- Windows and macOS builds and tests: not run
+- GitHub Actions (`ci.yml`, `release.yml`), the release build and a release archive: not run; the earlier record names a payment problem on the account
+- memory and timing measurements of large inputs: not run
+- before/after runs of earlier repairs: not run
 
 ## Claim → test
 

@@ -1,189 +1,30 @@
 # Kwaliteit
 
-De meting hieronder geldt voor deze commit.
+Deze commit wijzigt alleen documentatie; de meting hieronder geldt voor codecommit c5b0ea7.
+
+Gemeten op 2026-11-25 op c5b0ea7 (origin/main), in een schone worktree. Dit bestand vervangt het langere eerdere verslag; het noemt alleen wat deze meting deed.
+
+Toolchain: cargo 1.99.0 (5f94df478 2026-08-27), rustc 1.99.0 (b940084d7 2026-09-28), Linux.
 
 Suite: 273 tests: 273 geslaagd, 0 mislukt, 0 genegeerd.
 
-Reparatie van 2026-11-23, bevinding B1 van de P-review van 73df4b1: `looks_like_json_array` in `src/parse.rs` sloeg na de openende haak alleen spatie en tab over, dus een afgekapte array met een CR na de haak (`[`, CR, `{"message":...,"logGroup":"/aws/lambda/other","architecture":"arm64"}`, zonder sluitende haak) werd als tekst gelezen, geteld en gefactureerd op `--function f` op x86_64 met exit 0. De codecommit 282f8e2 slaat spatie, tab, CR en LF over. Een gewone haakregel (`[INFO]`, `[ERROR]`, `[WARNING]`, `[main]`, `[JJJJ-MM-DD`) blijft tekst. Dezelfde bestanden voor (tip 73df4b1) en na (282f8e2), releasebuild, `lambda-bill --function f <bestand>`, uitvoer gefilterd op de foutregel, de tabelrijen en de exitcode. `base.json` is de afgekapte array zonder CR, `c.json`, `spcr.json` en `tabcr.json` hebben CR, spatie+CR en tab+CR na de haak, `valid.json` is de gesloten array met CR, `text.log` heeft `[INFO]`-, `[main]`- en `[2024-01-01]`-regels rond een REPORT.
-
-Voor, op 73df4b1:
-
-```
-== base.json
-lambda-bill: base.json: line 1: not JSON
-exit 2
-== c.json
-function  architecture  memory_mb  max_used_mb  requests  cold_starts  gb_seconds    duration_usd  request_usd       total_usd  advice
-total                                                  1            0        0.05  0.000000833335    0.0000002  0.000001033335
-advice f x86_64 512 MB: downsize to 128 MB; duration USD 0.000000833335 -> 0.00000020833375 if billed duration stays the same
-exit 0
-== spcr.json
-function  architecture  memory_mb  max_used_mb  requests  cold_starts  gb_seconds    duration_usd  request_usd       total_usd  advice
-total                                                  1            0        0.05  0.000000833335    0.0000002  0.000001033335
-advice f x86_64 512 MB: downsize to 128 MB; duration USD 0.000000833335 -> 0.00000020833375 if billed duration stays the same
-exit 0
-== tabcr.json
-function  architecture  memory_mb  max_used_mb  requests  cold_starts  gb_seconds    duration_usd  request_usd       total_usd  advice
-total                                                  1            0        0.05  0.000000833335    0.0000002  0.000001033335
-advice f x86_64 512 MB: downsize to 128 MB; duration USD 0.000000833335 -> 0.00000020833375 if billed duration stays the same
-exit 0
-== valid.json
-function  architecture  memory_mb  max_used_mb  requests  cold_starts  gb_seconds   duration_usd  request_usd      total_usd  advice
-other     arm64               512           40         1            0        0.05  0.00000066667    0.0000002  0.00000086667  downsize to 128 MB
-total                                                  1            0        0.05  0.00000066667    0.0000002  0.00000086667
-advice other arm64 512 MB: downsize to 128 MB; duration USD 0.00000066667 -> 0.0000001666675 if billed duration stays the same
-exit 0
-== text.log
-function  architecture  memory_mb  max_used_mb  requests  cold_starts  gb_seconds    duration_usd  request_usd       total_usd  advice
-total                                                  1            0        0.05  0.000000833335    0.0000002  0.000001033335
-exit 0
-```
-
-Na, op 282f8e2:
-
-```
-== base.json
-lambda-bill: base.json: line 1: not JSON
-exit 2
-== c.json
-lambda-bill: c.json: line 1: not JSON
-exit 2
-== spcr.json
-lambda-bill: spcr.json: line 1: not JSON
-exit 2
-== tabcr.json
-lambda-bill: tabcr.json: line 1: not JSON
-exit 2
-== valid.json
-function  architecture  memory_mb  max_used_mb  requests  cold_starts  gb_seconds   duration_usd  request_usd      total_usd  advice
-other     arm64               512           40         1            0        0.05  0.00000066667    0.0000002  0.00000086667  downsize to 128 MB
-total                                                  1            0        0.05  0.00000066667    0.0000002  0.00000086667
-advice other arm64 512 MB: downsize to 128 MB; duration USD 0.00000066667 -> 0.0000001666675 if billed duration stays the same
-exit 0
-== text.log
-function  architecture  memory_mb  max_used_mb  requests  cold_starts  gb_seconds    duration_usd  request_usd       total_usd  advice
-total                                                  1            0        0.05  0.000000833335    0.0000002  0.000001033335
-exit 0
-```
-
-Gewenst: `c.json`, `spcr.json` en `tabcr.json` geven exit 2 met `not JSON` en tellen niets (ze waren exit 0, 1 request, functie f, x86_64); `base.json` blijft exit 2; `valid.json` en `text.log` blijven exit 0 zoals eerst. Suite op 282f8e2: 273 tests, 273 geslaagd. De bestaande test `a_bracket_prefix_that_is_not_json_stays_text_and_a_cut_array_is_not_json` heeft er nu ook zeven afgekapte arrays met CR bij; met de oude `src/parse.rs` faalde hij (`assertion left == right failed ... left: 0, right: 2`), met de reparatie slaagt hij. Clippy `-D warnings` en `cargo fmt --check` zijn schoon. Nog open: dezelfde review noemt andere eerste tekens na de haak (`\f`, `\v`, vaste spatie, zero-width spatie, NUL, BOM) die deze reparatie niet raakt; de grens `[1,2] x` blijft zoals eerst. Dit is een reparatie, geen eindoordeel.
-
-Reparatie van 2026-11-23, bevinding uit de review van 0a1ebb8: sinds 080dab6 was elke regel die met `[` begint en geen JSON en geen `[JJJJ-MM-DD` is `not JSON` (exit 2), dus één gewone `[INFO]`-regel stopte de hele map, terwijl de CHANGELOG zegt dat zo'n regel tekst is. Codecommit e710e44 leest een `[`-regel die geen JSON is als tekst, tenzij hij opent als een JSON-array (`{`, `[`, `]`, `"`, `true`/`false`/`null`, alleen getallen, of niets na het haakje). Dezelfde vier bestanden, `lambda-bill --json <bestand>`, uitvoer gefilterd op de foutregel en de regel `"requests"`, releasebuild, letterlijke uitvoer.
-
-Vóór, op 0a1ebb8:
-
-```
-== info.log
-   | # function: f
-   | [INFO] start
-   | REPORT RequestId: a1 Duration: 100.00 ms Billed Duration: 100 ms Memory Size: 128 MB Max Memory Used: 64 MB
-   | [ERROR] x
-   | [WARNING] y
-   | [main] z
-lambda-bill: info.log: line 2: not JSON
-exit 2
-== cut.log
-   | # function: f
-   | REPORT RequestId: a1 Duration: 100.00 ms Billed Duration: 100 ms Memory Size: 128 MB Max Memory Used: 64 MB
-   | [{"message":"REPORT RequestId: a1 Duration: 100.00 ms Billed Duration: 100 ms Memory Size: 128 MB Max Memory Used: 
-lambda-bill: cut.log: line 3: not JSON
-exit 2
-== nobracket.log
-   | # function: f
-   | REPORT RequestId: a1 Duration: 100.00 ms Billed Duration: 100 ms Memory Size: 128 MB Max Memory Used: 64 MB
-   | [{"message":"x"}
-lambda-bill: nobracket.log: line 3: not JSON
-exit 2
-== date.log
-   | # function: f
-   | [2024-01-01] REPORT RequestId: a1 Duration: 100.00 ms Billed Duration: 100 ms Memory Size: 128 MB Max Memory Used: 
-    "requests": 1,
-exit 0
-```
-
-Na, op e710e44:
-
-```
-== info.log
-   | # function: f
-   | [INFO] start
-   | REPORT RequestId: a1 Duration: 100.00 ms Billed Duration: 100 ms Memory Size: 128 MB Max Memory Used: 64 MB
-   | [ERROR] x
-   | [WARNING] y
-   | [main] z
-    "requests": 1,
-exit 0
-== cut.log
-   | # function: f
-   | REPORT RequestId: a1 Duration: 100.00 ms Billed Duration: 100 ms Memory Size: 128 MB Max Memory Used: 64 MB
-   | [{"message":"REPORT RequestId: a1 Duration: 100.00 ms Billed Duration: 100 ms Memory Size: 128 MB Max Memory Used: 
-lambda-bill: cut.log: line 3: not JSON
-exit 2
-== nobracket.log
-   | # function: f
-   | REPORT RequestId: a1 Duration: 100.00 ms Billed Duration: 100 ms Memory Size: 128 MB Max Memory Used: 64 MB
-   | [{"message":"x"}
-lambda-bill: nobracket.log: line 3: not JSON
-exit 2
-== date.log
-   | # function: f
-   | [2024-01-01] REPORT RequestId: a1 Duration: 100.00 ms Billed Duration: 100 ms Memory Size: 128 MB Max Memory Used: 
-    "requests": 1,
-exit 0
-```
-
-Gewenst: `info.log` tekst en exit 0 (was exit 2), `cut.log` en `nobracket.log` blijven exit 2 en tellen niets, `date.log` blijft tekst en exit 0. Suite op e710e44: 273 tests, 273 geslaagd; de nieuwe test is `a_bracket_prefix_that_is_not_json_stays_text_and_a_cut_array_is_not_json`, en `a_plain_line_with_a_glued_marker_is_ignored_and_a_json_line_with_one_is_an_error` verwacht nu `not a Lambda REPORT line` voor `[ts] x<marker>` (nog exit 2, lege standaarduitvoer). Niet gerepareerd, nog open: veel kleine gzip-bestanden, en `--md` met bestandsnamen. Grens: een tekstregel als `[1,2] x` of `[true] x` opent als een array en blijft `not JSON`.
-
-Deze commit wijzigt alleen documentatie. Bij elk getal hieronder staat op welke commit het gemeten is; een rij die niet is herhaald zegt dat. De Engelse [QUALITY.md](QUALITY.md) is leidend voor alle details en metingen; dit bestand geeft dezelfde feiten in het Nederlands, met de lange meetparagrafen samengevat.
-
-Registratie van 2026-11-23, codecommit e35a324 (`src/`, `tests/` en het manifest zijn gelijk aan die van 40aa20a en fe0a063; de commits na e35a324 wijzigen alleen documenten). Linux x86_64, rustc 1.99.0 en cargo 1.99.0 (stable). Voor deze registratie gemeten op e35a324: debug `cargo test --locked --offline`: 271 geslaagd, 0 mislukt, 0 genegeerd, waarvan `cargo test --locked --offline --lib` 66 geslaagd printte; `cargo fmt --check` en `cargo clippy --locked --offline --all-targets -- -D warnings`: afsluitcode 0. Gemeten op fe0a063 door de eindreview: `cargo fmt --check`, clippy, de debug- en de release-testrun (telkens 271 geslaagd, 0 mislukt), `cargo package` en `cargo deny`; `cargo +1.85` compileerde de tests alleen (`--no-run`), de 1.85-tests: not run. Elke andere rij hieronder is de registratie van 2026-11-20 op commit 2d51303 (toen 269 tests) en is niet herhaald. CI voor deze commit: not run. Elke overgeslagen controle staat één keer onder Niet uitgevoerd hieronder. Geen tag, geen publicatie, geen push.
-
-Rood voor groen, 2026-11-23, bevinding B-1 van de eindreview: een regel die met `[` begint, geen `[YYYY-MM-DD`-tijdstempel is en geen JSON is, ging naar de tekstparser, zodat een afgekapte array zijn `logGroup` en `architecture` verloor en met exit 0 op `--function` en x86_64 werd gerekend. De nieuwe test `a_broken_json_array_line_is_not_json_and_a_valid_one_keeps_its_envelope` draaide eerst op de code van 61a50a1 en faalde: `thread 'a_broken_json_array_line_is_not_json_and_a_valid_one_keeps_its_envelope' panicked at tests/cli.rs:2357:9: assertion `left == right` failed: cut`, `left: 0`, `right: 2`, `test result: FAILED. 0 passed; 1 failed`. Met de fix in `src/parse.rs` (commit 080dab6) slaagt hij, en `a_big_text_log_that_starts_with_a_bracket_is_not_counted_as_json` blijft groen. Debug `cargo test --locked --offline --no-fail-fast` op 080dab6: 272 tests, 271 geslaagd, 1 mislukt: `the_documents_state_the_real_number_of_tests`, omdat README.md en README.nl.md nog 271 zeggen; de testrijen in de tabellen hieronder zijn de getallen van e35a324. Twee bestaande tests (`a_plain_line_with_a_glued_marker_is_ignored_and_a_json_line_with_one_is_an_error`, `uncounted_report_marker_in_json_or_bracket_line_exits_2`) verwachten nu `not JSON` voor een haakjesregel die geen tijdstempel is; de afsluitcode is 2 en de standaarduitvoer is leeg, zoals eerder.
-
-Rood voor groen, 2026-11-23, op een wegwerpkopie buiten deze repository: `MAX_JSON_UNITS` in `src/budget.rs` ging van 4_000_000 naar 400_000_000. `a_json_document_with_too_many_values_is_refused_before_it_is_built` faalde toen (`tests/cli.rs:2260:5`, `lambda-bill: /big.json: event 1: not a log event`, `test result: FAILED. 0 passed; 1 failed`). Na terugdraaien slaagde hij weer. De kopie staat niet in de repository.
-
-Tests zijn onafhankelijk van de systeemklok: elke test die het programma draait geeft een vaste `--as-of 2026-11-20` mee (of een eigen datum). Bewijs, vóór de fix: in een kopie van de map is `src/money.rs` (`today_utc`) zo aangepast dat de klok 400 dagen vooruit loopt, en `cargo test --no-fail-fast` faalde toen met minstens 27 tests in `tests/cli.rs` (`assertion failed: stderr.is_empty()` en andere). Met de fix slaagt dezelfde kopie voor alle tests (toen 258).
-
 ## Opdrachten
 
-De kolom Gemeten op van deze tabel zegt op welke commit elke rij het laatst draaide: e35a324 (gedraaid voor deze registratie, met `-j 2` en `--test-threads 2`), fe0a063 (de eindreview) of 2d51303 (de registratie van 2026-11-20, niet herhaald; zie Niet uitgevoerd).
-
-| Opdracht | Afsluitcode | Gemeten op |
-| --- | ---: | --- |
-| `cargo fmt --check` | 0 | e35a324 and fe0a063 (final review) |
-| `cargo clippy --locked --offline --all-targets -- -D warnings` (stable) | 0 | e35a324 and fe0a063 (final review) |
-| `cargo +1.85 clippy --locked --offline --all-targets -- -D warnings` | 0 | 2d51303 |
-| `cargo check --locked --offline --tests --target x86_64-pc-windows-gnu` | 0 | 2d51303 |
-| `cargo check --locked --offline --tests --target x86_64-apple-darwin` | 0 | 2d51303 |
-| `cargo check --locked --offline --tests --target x86_64-unknown-linux-musl` | 0 | 2d51303 |
-| `cargo clippy --locked --offline --all-targets --target x86_64-pc-windows-gnu -- -D warnings` | 0 | 2d51303 |
-| `cargo clippy --locked --offline --all-targets --target x86_64-apple-darwin -- -D warnings` | 0 | 2d51303 |
-| `cargo clippy --locked --offline --all-targets --target x86_64-unknown-linux-musl -- -D warnings` | 0 | 2d51303 |
-| `cargo test --locked --offline` (debug) | 0 | e35a324 and fe0a063 (final review) |
-| `cargo test --locked --offline --lib` (66 geslaagd) | 0 | e35a324 |
-| `cargo test --locked --offline --release` | 0 | fe0a063 (final review) |
-| `cargo +1.85 test --locked --offline` (debug) | 0 | 2d51303 (op fe0a063 zijn de tests alleen gecompileerd) |
-| `cargo +1.85 test --locked --offline --no-run` | 0 | fe0a063 (final review) |
-| `cargo package --locked --offline --allow-dirty --no-verify --list` | 0 | fe0a063 (final review) |
-| `cargo package --locked --offline --allow-dirty --no-verify`, then `cargo test --offline` in the unpacked crate | 0 | 2d51303 |
-| `bash scripts/check-glibc.sh target/release/lambda-bill 2.34` | 0 | 2d51303 |
-| `cargo deny --locked check licenses` | 0 | fe0a063 (final review) |
-| `cargo audit --no-fetch` | 0 | 2d51303 |
-
-De rijen voor Windows, macOS en musl compileren de code en de tests en draaien clippy. Op die doelen is niets gedraaid. `cargo deny` meldde `licenses ok`. `cargo audit` las 1527 advisories (database van de machine, niet ververst) voor 76 crates en meldde er geen. `check-glibc.sh` meldde `highest GLIBC symbol: 2.34 (allowed: 2.34)` voor de releasebinary van deze machine.
-
-`cargo package --list` heeft 50 regels: `.cargo_vcs_info.json`, `.gitignore`, `CHANGELOG.md`, `CONTRIBUTING.md`, `Cargo.lock`, `Cargo.toml`, `Cargo.toml.orig`, beide licenties, `QUALITY.md`, `QUALITY.nl.md`, `README.md`, `README.nl.md`, `SECURITY.md`, `about.hbs`, `about.toml`, `build.rs`, `deny.toml`, `examples/*` (tien bestanden), `man/lambda-bill.1`, `prices/lambda-ondemand.json`, `src/*.rs` (dertien bestanden) en `tests/*.rs` (zeven bestanden). `.github/`, `.gitattributes` en `scripts/` zijn uitgesloten (het manifest noemt ze in `exclude`).
+| Opdracht | Uitslag |
+| --- | --- |
+| `cargo fmt --check` | exit 0, geen verschillen |
+| `cargo clippy --all-targets --locked -- -D warnings` | exit 0, geen waarschuwingen |
+| `cargo test --locked` | exit 0, 273 geslaagd, 0 mislukt, 0 genegeerd |
+| `cargo test --release --locked` | exit 0, 273 geslaagd, 0 mislukt, 0 genegeerd |
 
 ## Testresultaat per doel
-
-Debug (`cargo test --locked --offline`) op e35a324 gaf de aantallen hieronder; de lib-rij is wat `cargo test --locked --offline --lib` printte (66). De releasekolom is het aantal van de eindreview op fe0a063 (`--release`, dezelfde bronnen), voor deze registratie niet herhaald. De tests van `cargo +1.85`: not run op deze boom.
 
 | Doel | Debug geslaagd | Debug mislukt | Debug genegeerd | Release geslaagd | Release mislukt | Release genegeerd |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | unittests `src/lib.rs` | 66 | 0 | 0 | 66 | 0 | 0 |
 | unittests `src/main.rs` | 0 | 0 | 0 | 0 | 0 | 0 |
 | `tests/claims.rs` | 39 | 0 | 0 | 39 | 0 | 0 |
-| `tests/cli.rs` | 139 | 0 | 0 | 139 | 0 | 0 |
+| `tests/cli.rs` | 140 | 0 | 0 | 140 | 0 | 0 |
 | `tests/documented_shapes.rs` | 9 | 0 | 0 | 9 | 0 | 0 |
 | `tests/docs_clean.rs` | 3 | 0 | 0 | 3 | 0 | 0 |
 | `tests/handbook_help.rs` | 1 | 0 | 0 | 1 | 0 | 0 |
@@ -192,98 +33,19 @@ Debug (`cargo test --locked --offline`) op e35a324 gaf de aantallen hieronder; d
 | doc-tests | 0 | 0 | 0 | 0 | 0 | 0 |
 | total | 273 | 0 | 0 | 273 | 0 | 0 |
 
-## Standaarduitvoer gesloten, alleen-lezen of vol
-
-`src/stdout_probe.rs` herkent een standaarduitvoer die bij de start van het programma gesloten of alleen-lezen was. Rust geeft een gesloten bestandsbeschrijver 1 vóór `main` terug als `/dev/null` (lezen en schrijven), en negeert de fout van een schrijfactie naar een beschrijver die niet voor schrijven is geopend. Daarna lijkt `>&-` dus op `1<>/dev/null` en `1<bestand` op een werkende uitvoer. Op Linux draait een constructor in `.init_array` eerder en legt de toestand van beschrijver 1 vast. `src/main.rs` weigert dan te schrijven en eindigt met 2. Op andere systemen zegt de probe altijd "schrijfbaar". Zijn `unsafe`-code is twee alleen-lezen aanroepen `fcntl(1, ...)` (`F_GETFD`, `F_GETFL`). De enige andere `unsafe`-code is de SIGINT-handler in `src/interrupt.rs` (zie SECURITY.md).
-
-Gemeten op 2026-11-19 met `examples/sample-report.log`. De debug- en de releasebinary gaven in elke rij dezelfde afsluitcode en melding.
-
-| Opdracht | Afsluitcode | Standaardfout |
-| --- | ---: | --- |
-| `lambda-bill examples/sample-report.log >&-` | 2 | `lambda-bill: could not write output` |
-| `lambda-bill examples/sample-report.log >/dev/full` | 2 | `lambda-bill: could not write output` |
-| `lambda-bill examples/sample-report.log >/dev/null` | 0 | none |
-| `bash -c 'lambda-bill examples/sample-report.log 1<>/dev/null'` | 0 | none |
-| `lambda-bill examples/sample-report.log 1<examples/sample-report.log` | 2 | `lambda-bill: could not write output` |
-| `lambda-bill examples/sample-report.log 1<.` | 2 | `lambda-bill: could not write output` |
-| `lambda-bill --json examples/sample-report.log >&-` | 2 | `lambda-bill: could not write output` |
-| `python3 -I -c '... subprocess.run([...], stdout=subprocess.DEVNULL)'` | 0 | none |
-| `lambda-bill examples/sample-report.log \| true` (10 runs) | 2 each | `lambda-bill: could not write output` |
-| `lambda-bill --help >&-` | 2 | `lambda-bill: stdout is not writable` |
-| `lambda-bill --version >&-` | 2 | `lambda-bill: stdout is not writable` |
-| `lambda-bill --help >/dev/full` | 2 | `lambda-bill: stdout is not writable` |
-| `lambda-bill --version >/dev/full` | 2 | `lambda-bill: stdout is not writable` |
-| `lambda-bill --help 1<examples/sample-report.log` | 2 | `lambda-bill: stdout is not writable` |
-| `lambda-bill --help >/dev/null` | 0 | none |
-| `lambda-bill --version 1<>/dev/null` | 0 | none |
-| `lambda-bill --help \| true` (10 runs) | 2 each | `lambda-bill: stdout is not writable` |
-| `lambda-bill --version \| true` (10 runs) | 2 each | `lambda-bill: stdout is not writable` |
-
-`python3` met `stdout=subprocess.DEVNULL` gaf afsluitcode 0 en 0 bytes standaardfout voor het rapport, `--help` en `--version`. Dezelfde rijen met `/proc` vervangen door een lege `tmpfs` (`unshare -Urm`) gaven dezelfde afsluitcodes. Geen enkele run gaf een panic. Of een gesloten pipe het schrijven laat falen hangt af van het moment waarop de lezer stopt. De tests `closed_stdout_exits_2_without_panic`, `dev_full_stdout_exits_2`, `read_only_stdout_exits_2`, `help_and_version_to_unwritable_stdout_exit_2`, `dev_null_stdout_exits_0` en `read_write_dev_null_is_not_a_closed_stdout` (`tests/cli.rs`, alleen Linux) dekken de rijen `>&-`, `/dev/full`, `1<bestand`, `/dev/null`, `1<>/dev/null`, `--help` en `--version`. De rijen met `DEVNULL`, zonder `/proc` en met `| true` hebben geen test.
-
-## Gebruiksfouten
-
-Een gebruiksfout die clap drukt behoudt zijn regeleinden en eindigt met een regeleinde. Gemeten met de releasebinary: `lambda-bill --headroom $'1\x1b[31m\nFAKE: line' examples/sample-report.log` en `lambda-bill $'--x\x1b[31m\nFAKE: line' examples/sample-report.log` eindigen allebei met 2 en drukken het argument als `\u{1b}[31m\u{a}FAKE: line` binnen de eigen regels van clap, zonder regel die met `FAKE` begint en zonder ESC-byte. Een argument dat geen geldige UTF-8 is gaf de eigen melding van clap, die het niet herhaalt. Tests: `clap_errors_keep_their_line_breaks`, `clap_error_with_escape_and_newline_in_an_argument_has_no_fake_line`, `clap_error_escapes_cr_bidi_and_invisible_characters_on_one_line`.
-
-## Rood vóór, groen erna
-
-Gedraaid op 2026-11-19 tegen commit dc217f5 (de tests van deze toestand, de bronnen van dc217f5), daarna tegen deze toestand. De tabel staat in [QUALITY.md](QUALITY.md).
-
-| Test | dc217f5 | Deze toestand |
-| --- | --- | --- |
-| `an_escaped_marker_in_a_field_that_is_not_read_is_an_error` | fails: `REPORT\u0020RequestId:` in `@message` gives exit 0 and one request | passes |
-| `a_fifo_as_prices_or_functions_file_is_not_a_file_and_does_not_hang` | fails: the run is still blocked after 5 s | passes |
-| `two_different_log_group_names_in_one_object_are_named_in_the_error` | fails: the message says the log group is not `/aws/lambda/<name>` | passes |
-| `a_json_document_with_too_many_values_is_refused_before_it_is_built` | fails: `[[0],...]` of 16400005 bytes is built in full and ends as `not a log event`, no budget error | passes |
-| `a_small_gzip_file_cannot_expand_into_too_many_values` | fails: the same text inside a gzip file of under 100000 bytes is built in full | passes |
-| `a_prices_or_functions_file_with_too_many_values_is_refused` | fails: a `--prices` file with 4100000 extra arrays is accepted, exit 0 | passes |
-
-De andere tests die in die toestand zijn toegevoegd leggen gedrag vast dat al bestond en nu is gedocumenteerd, dus ze slagen ook op dc217f5. Op commit a7d2dd6, vóór de wijziging naar exacte decimalen, eindigden `a_duration_that_needs_more_than_28_digits_exits_2` en vier verwante tests met 0 en drukten een afgerond bedrag; nu eindigen ze met 2. De details staan in [QUALITY.md](QUALITY.md).
-
 ## Niet uitgevoerd
 
-- Een fuzz-campagne.
-- Een mutatierun.
-- `cargo audit` met een ververste advisory-database (er is geen netwerk gebruikt).
-- De rijen van de opdrachtentabel waar Gemeten op 2d51303 zegt (de 1.85-clippy- en testrijen, de rijen voor Windows, macOS en musl, de test van het uitgepakte pakket, `check-glibc.sh` en `cargo audit`): op deze commit not run. De tests van `cargo +1.85`: not run, op fe0a063 alleen gecompileerd.
-- GitHub Actions: noch `.github/workflows/ci.yml` noch `.github/workflows/release.yml` is gedraaid, wegens het betaalprobleem van het account. Dus de job `glibc` (Ubuntu 22.04), de tijdslimieten, de releasebuild op vijf doelen, de rooktest van het archief en de CI-badge in de README hebben geen resultaat. Het glibc-cijfer hierboven komt van deze machine, en de releaseworkflow is alleen als YAML gecontroleerd.
-- `directory_at_64_levels_is_accepted` bouwt een pad van enkele honderden tekens; op Windows is het niet gedraaid.
-- Elke test op Windows, macOS of musl. Alleen de compileer- en clippy-rijen hierboven draaiden daar. De tests met gesloten standaarduitvoer en die met een ESC-byte in een bestandsnaam zijn alleen Linux, de symlinktests alleen Unix, en de probe meldt op andere systemen "schrijfbaar".
-- `git push`, `git tag` en `cargo publish`: er is niets gepusht, getagd of gepubliceerd. De commits zijn lokaal, dus de standaardtak op GitHub toont deze hash nog niet.
-- De opdrachten van de snelstart in de README met de geïnstalleerde binary (`cargo install`): de test draait dezelfde bytes door de testbinary.
-- `cargo test` met `--ignored`: de suite heeft geen genegeerde test.
+Dit deed deze meting niet. Elk hiervan is not run:
 
-## Bekende grenzen
-
-- Deze pagina legt controles vast. Het is geen garantie en geen fuzzrapport.
-- Een gesloten of alleen-lezen standaarduitvoer wordt alleen op Linux herkend. Elders wordt het niet gezien en beslist de schrijfactie zelf.
-- `lambda-bill ... | true` eindigt met 2 als de lezer de pipe al heeft gesloten bij het schrijven. Een lezer die later sluit kan afsluitcode 0 zien. Geen test legt dit vast.
-- Geheugen: elk bestand wordt in het geheugen gelezen, en de limiet van 268435456 bytes geldt per bestand, niet voor de hele run. Een JSON-document, een `--prices`-bestand en een `--functions`-bestand worden geteld voordat ze worden opgebouwd en boven 4000000 waarden geweigerd. Gemeten met de releasebinary op dit budget (4000000) was het piekgeheugen van documenten op het budget 356556 tot 623372 KB (0,6 tot 2,3 s); bij het oude budget van 20000000 waarden was dat tot 2846368 KB en 17,2 s. Boven het budget duurde de weigering 0,5 tot 0,8 s en minder dan 200 MB. Geen test meet het geheugen zelf; de tests controleren de weigering. De volledige cijfers staan in [QUALITY.md](QUALITY.md).
-- Een gzip-bestand van veel lege leden is traag binnen de bestandslimiet: 13000000 lege leden en één echt lid (260000109 bytes) duurden 39,3 s en 255808 KB met afsluitcode 0, omdat elk lid een nieuwe decoder start. Het groeit lineair. Productbesluit, open punt: een maximum aantal leden of een tijdslimiet. Geen test (`gap`).
-- Een run meldt hoogstens 100000 rijen (één per functie, architectuur en geheugengrootte). Meer is `more than 100000 function and memory rows`, afsluitcode 2, ook met `--json`; de test `a_run_with_too_many_functions_is_refused` legt dit vast. De grens vervangt het eerdere open punt over bestanden met heel veel functies; voor deze registratie is geen tijd gemeten.
-- Een JSON-regel wordt begrensd door de regellimiet (1048576 bytes), niet door het waardebudget. Zo'n regel wordt één voor één opgebouwd en vrijgegeven.
-- De crate is niet gepubliceerd en heeft geen tag, dus er bestaat geen releasearchief (de releaseworkflow: zie Niet uitgevoerd).
-- Het JSON-logformaat van Lambda (records `type: platform.report`) wordt niet gelezen. Zo'n record wordt zonder bericht overgeslagen en zijn aanvraag telt niet mee (`platform_report_records_are_not_read`).
-- Een opgemaakt JSON-object dat geen CloudWatch-gebeurtenis is en geen `@message` of `Message` heeft, wordt geweigerd als `line 1: not JSON`. Een tekstlog met een regel als `{'a': 1}` wordt als geheel geweigerd, met opzet.
-- Een GB-seconde, een duurbedrag, een aanvraagbedrag, een adviesbedrag en een totaal worden alleen opgeslagen als ze al een exact 96-bits decimaal getal zijn (coëfficiënt hoogstens 79228162514264337593543950335, hoogstens 28 cijfers achter de komma). Vermenigvuldigen en delen houden elk cijfer. Al het andere is `price overflow`, afsluitcode 2. Er wordt niets afgerond. De voorbeelden staan in [QUALITY.md](QUALITY.md) en in de README (Beperkingen).
-- Een pad dat letterlijk `bad\xff\xfe.log` heet, wordt op dezelfde manier getoond als een pad met de bytes ff en fe.
-- Het totaal is de exacte som van de rijbedragen. Een som die geen exact decimaal getal is, is `price overflow`. De tabel toont het opgeslagen decimaal getal (bijvoorbeeld `0.00000165833585`) en rondt het niet opnieuw af.
-- "Geen netwerkverbinding" wordt gecontroleerd via de afhankelijkhedenlijst (`cargo tree -e normal`), een zoektocht in `src/` naar socket- en procesaanroepen (de enige bestandsschrijfacties zijn het tijdelijke bestand, de hernoeming en het opruimen van `--output` in `write_output_file`, `src/main.rs`; `build.rs` start bij het bouwen `git`), en `claim_c17_no_aws_sdk_and_no_network`. Geen test bewaakt systeemaanroepen.
-- Het aantal tests in `README.md` en in dit bestand wordt vergeleken met het aantal testattributen in `src/` en `tests/` (`tests/quality.rs`), niet met de uitvoer van `cargo test`.
-- Een GB-seconde-quotiënt dat geen exact decimaal getal is, is `price overflow`, afsluitcode 2. Gemeten: 18446744073709551615 ms op 1023 MB (`gb_seconds_quotient_beyond_28_digits_is_an_error`). Het werd vroeger afgerond opgeslagen. De langste aanroep van Lambda is 900000 ms.
-- Een product, een som of een adviesbedrag dat geen exact decimaal getal is, is `price overflow`, afsluitcode 2; de gemeten gevallen staan in [QUALITY.md](QUALITY.md).
-- Billed Duration wordt gelezen met hoogstens 20 tekens en Memory Size en Max Memory Used met hoogstens 10 tekens; de grens is de lengte, niet de waarde (`billed_duration_and_memory_fields_are_limited_by_their_text_length`).
-- Tekst vóór een JSON-regel (een byte-order-mark, een komma, `data: `, een tijdstempel) maakt van de regel tekst, en de markering erin telt niet mee (`text_before_a_json_line_makes_it_text_and_its_marker_does_not_count`).
-- Een `# function:`-kop na de eerste REPORT geeft nog steeds het hele bestand zijn naam; twee verschillende koppen zijn een fout.
-- Een RequestId dat twee keer voorkomt voor één functie met andere geheugen- of duurwaarden telt één keer, de eerste kopie wint, en de waarschuwing telt alleen de duplicaten.
-- Een bestand van 268435456 lege regels duurde 3,3 s en 526208 KB met de releasebinary; de debugbuild is veel trager (zie [QUALITY.md](QUALITY.md)).
-- De bestanden `--prices` en `--functions` moeten gewone bestanden zijn; een FIFO of `<(opdracht)` is `not a file` en hangt niet.
-- Een veld dat na de vier vaste velden van een REPORT-regel wordt herhaald, is trailing tekst en wordt genegeerd.
-- `--headroom +5` en `--headroom 05` worden als 5 geaccepteerd (`headroom_accepts_a_plus_sign_and_leading_zero`).
-- Een gebruiksfout voor een argument dat geen UTF-8 is, is de eigen tekst van clap, niet de geëscapete weergave.
-- "Niet gepubliceerd en geen git-tag" is een repositoryfeit. Geen test controleert het.
-- De systeemvereisten in `README.md` (glibc 2.34 voor een releasebuild op Linux x86_64) zijn gemeten op deze machine; de CI-job die het op Ubuntu 22.04 controleert staat onder Niet uitgevoerd.
-- De README-claims zonder test, of met maar een deel van een test, zijn in de tabel hieronder gemarkeerd.
+- cargo deny: not run
+- cargo audit: not run
+- cargo llvm-cov (dekking): not run
+- cargo mutants (mutatietests): not run
+- cargo fuzz: not run
+- Windows- en macOS-builds en -tests: not run
+- GitHub Actions (`ci.yml`, `release.yml`), de releasebuild en een releasearchief: not run; het eerdere verslag noemt een betaalprobleem van het account
+- geheugen- en tijdmetingen met grote invoer: not run
+- voor/na-runs van eerdere reparaties: not run
 
 ## Claim → test
 
