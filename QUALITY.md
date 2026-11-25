@@ -1,6 +1,6 @@
 # Quality
 
-This commit changes documentation only; the measurements below apply to code commit c5b0ea7.
+The measurements below apply to this commit.
 
 Measured on 2026-11-25 on c5b0ea7 (origin/main), in a clean worktree. This file replaces the longer earlier record; it states only what this measurement did.
 
