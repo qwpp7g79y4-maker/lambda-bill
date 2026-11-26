@@ -1,6 +1,6 @@
 # lambda-bill
 
-[![CI](https://github.com/qwpp7g79y4-maker/lambda-bill/actions/workflows/ci.yml/badge.svg)](https://github.com/qwpp7g79y4-maker/lambda-bill/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/lambda-bill.svg)](https://crates.io/crates/lambda-bill) [![downloads](https://img.shields.io/crates/d/lambda-bill.svg)](https://crates.io/crates/lambda-bill) [![CI](https://github.com/qwpp7g79y4-maker/lambda-bill/actions/workflows/ci.yml/badge.svg)](https://github.com/qwpp7g79y4-maker/lambda-bill/actions/workflows/ci.yml) [![PEPAI checked](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fqwpp7g79y4-maker%2Flambda-bill%2Fmain%2F.github%2Fbadge.json)](QUALITY.md) [![MSRV 1.85](https://img.shields.io/badge/MSRV-1.85-blue.svg)](https://github.com/qwpp7g79y4-maker/lambda-bill/blob/main/Cargo.toml) [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/qwpp7g79y4-maker/lambda-bill#license)
 
 Schat de on-demand-kosten van AWS Lambda uit CloudWatch-`REPORT`-regels, per functie, voor x86_64 en arm64, met een advies voor het geheugen. Voor wie een Lambda-logexport heeft en de kosten tegen lijstprijzen en een geheugenadvies wil, zonder account en zonder netwerkverbinding. De Engelse versie is [README.md](README.md); beide hebben dezelfde inhoud.
 

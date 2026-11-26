@@ -5,7 +5,9 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.0] - 2026-11-15
+
+Changes made after 2026-11-15; the version number did not change.
 
 ### Changed
 
@@ -71,7 +73,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The text table measures column width in characters, not bytes, and trims only ASCII white space at the end of a row.
 - `README.md` states the input rules (`--headroom +5` and `05` are read as 5, a repeated field after the fixed fields is ignored), that an amount which is not an exact decimal is an error, the system requirements, the memory use measured for large JSON files, that Lambda's `platform.report` records are not read, and the request-rate overflow case. `README.md` and `QUALITY.md` state the current test count and what standard output does when it is closed, read-only or full. `QUALITY.md` now records the commands, exit codes, per-target counts, what was not run, known limits, and which test covers each README claim.
 
-## [1.0.0] - 2026-11-15
 
 ### Added
 

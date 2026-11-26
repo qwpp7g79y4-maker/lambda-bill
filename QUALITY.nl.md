@@ -1,5 +1,7 @@
 # Kwaliteit
 
+pep: 8.6
+
 De meting hieronder geldt voor deze commit.
 
 Gemeten op 2026-11-25 op c5b0ea7 (origin/main), in een schone worktree. Dit bestand vervangt het langere eerdere verslag; het noemt alleen wat deze meting deed.
