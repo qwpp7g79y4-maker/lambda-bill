@@ -24,7 +24,7 @@ cargo install --locked --path .
 lambda-bill --help
 ```
 
-This crate is not published. Install from this checkout, not from crates.io. No release archive exists yet: `.github/workflows/release.yml` builds archives with the third-party license texts when a version tag is pushed, and no tag has been pushed.
+From crates.io: `cargo install lambda-bill`. No release archive exists yet: `.github/workflows/release.yml` builds archives with the third-party license texts when a version tag is pushed, and no tag has been pushed.
 
 **Supported systems.** The suite was run on Linux x86_64 only. A release build there needs glibc 2.34 or newer; the workflow has a job that checks the highest glibc symbol of a release build on Ubuntu 22.04, and it has not run yet. The code is also compiled and checked with clippy for the Windows (`x86_64-pc-windows-gnu`), macOS (`x86_64-apple-darwin`) and musl (`x86_64-unknown-linux-musl`) targets, but no test ran on those systems. A standard output that is closed or read-only at start is detected on Linux only.
 
