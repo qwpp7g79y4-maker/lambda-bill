@@ -1,6 +1,6 @@
 # lambda-bill
 
-[![CI](https://github.com/qwpp7g79y4-maker/lambda-bill/actions/workflows/ci.yml/badge.svg)](https://github.com/qwpp7g79y4-maker/lambda-bill/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/lambda-bill.svg)](https://crates.io/crates/lambda-bill) [![downloads](https://img.shields.io/crates/d/lambda-bill.svg)](https://crates.io/crates/lambda-bill) [![CI](https://github.com/qwpp7g79y4-maker/lambda-bill/actions/workflows/ci.yml/badge.svg)](https://github.com/qwpp7g79y4-maker/lambda-bill/actions/workflows/ci.yml) [![PEPAI checked](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fqwpp7g79y4-maker%2Flambda-bill%2Fmain%2F.github%2Fbadge.json)](QUALITY.md) [![MSRV 1.85](https://img.shields.io/badge/MSRV-1.85-blue.svg)](https://github.com/qwpp7g79y4-maker/lambda-bill/blob/main/Cargo.toml) [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/qwpp7g79y4-maker/lambda-bill#license)
 
 Estimate AWS Lambda on-demand cost from CloudWatch `REPORT` lines, per function, for x86_64 and arm64, with a memory advice. For whoever has a Lambda log export and wants the list-price cost and a memory hint without an account or a network call.
 
@@ -66,15 +66,15 @@ note: advice assumes billed duration stays the same. Lambda gives CPU in proport
 
 512 MB for 151 billed milliseconds is 0.0755 GB-seconds. One of the two lines has `Init Duration`, so there is one cold start. The init time is not added again: it is already inside `Billed Duration`. Max Memory Used is 64 MB, so the advice is to set the memory to 128 MB. The dollar change on that line assumes the billed duration stays the same.
 
-## Aan de slag in 5 minuten
+## Quickstart in 5 minutes
 
-1. Installeer vanuit een kopie van deze repository: `cargo install --locked --path .` (Rust 1.85 of nieuwer).
-2. Haal een logexport op, bijvoorbeeld met `aws logs filter-log-events` of via de CloudWatch-console, en bewaar die als bestand of map.
-3. Draai `lambda-bill export.log`. Staat de functienaam niet in het bestand, geef die dan mee met `--function naam`. Is de functie arm64, voeg `--arch arm64` toe.
-4. Lees de tabel: GB-seconden, bedrag per functie, en het advies voor het geheugen. De uitvoer is een schatting uit lijstprijzen, niet je AWS-factuur.
-5. Wil je de cijfers verder gebruiken, voeg dan `--json` of `--md` toe, of schrijf met `--output rapport.json` naar een bestand.
+1. Install from a copy of this repository: `cargo install --locked --path .` (Rust 1.85 or newer).
+2. Get a log export, for example with `aws logs filter-log-events` or through the CloudWatch console, and save it as a file or folder.
+3. Run `lambda-bill export.log`. If the function name is not in the file, pass it with `--function name`. If the function is arm64, add `--arch arm64`.
+4. Read the table: GB-seconds, amount per function, and the memory advice. The output is an estimate from list prices, not your AWS invoice.
+5. To use the figures further, add `--json` or `--md`, or write to a file with `--output report.json`.
 
-De volledige Nederlandse uitleg staat in [README.nl.md](README.nl.md).
+The full Dutch explanation is in [README.nl.md](README.nl.md).
 
 ## Options
 

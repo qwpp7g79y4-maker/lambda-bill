@@ -2,6 +2,8 @@
 
 De meting hieronder geldt voor deze commit.
 
+pep: 10
+
 Gemeten op 2026-11-25 op c5b0ea7 (origin/main), in een schone worktree. Dit bestand vervangt het langere eerdere verslag; het noemt alleen wat deze meting deed.
 
 Toolchain: cargo 1.99.0 (5f94df478 2026-08-27), rustc 1.99.0 (b940084d7 2026-09-28), Linux.
