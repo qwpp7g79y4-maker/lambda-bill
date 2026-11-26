@@ -635,7 +635,7 @@ fn claim_c25_json_includes_the_source_url_and_the_date() {
     let got = bill(&line("a1", "1", 10, 128, 8), &checkout());
     let json = render(&got, true);
     assert!(json.ends_with('\n'));
-    assert!(json.contains("\"version\": \"1.0.0\""));
+    assert!(json.contains("\"version\": \"1.0.1\""));
     assert!(json.contains("\"source\": \"https://aws.amazon.com/lambda/pricing/\""));
     assert!(json.contains("\"date\": \"2026-11-09\""));
     assert!(json.contains("\"currency\": \"USD\""));

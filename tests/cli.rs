@@ -192,7 +192,7 @@ fn version_exits_0() {
     let (code, stdout, stderr) = run(&["--version"]);
     assert_eq!(code, 0);
     assert!(stderr.is_empty());
-    assert!(stdout.contains("lambda-bill 1.0.0"));
+    assert!(stdout.contains("lambda-bill 1.0.1"));
 }
 
 #[test]

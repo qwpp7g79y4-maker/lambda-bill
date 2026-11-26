@@ -165,7 +165,7 @@ note: advice assumes billed duration stays the same. Lambda gives CPU in proport
 $ lambda-bill --json --arch arm64 --function worker examples/arm-report.log
 {
   "schema_version": 1,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "currency": "USD",
   "source": "https://aws.amazon.com/lambda/pricing/",
   "date": "2026-11-09",
