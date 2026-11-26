@@ -1,8 +1,8 @@
 # Quality
 
-pep: 8.6
-
 The measurements below apply to this commit.
+
+pep: 10
 
 Measured on 2026-11-25 on c5b0ea7 (origin/main), in a clean worktree. This file replaces the longer earlier record; it states only what this measurement did.
 
