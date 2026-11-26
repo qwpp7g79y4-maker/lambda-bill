@@ -89,8 +89,6 @@ Changes made after 2026-11-15; the version number did not change.
 - A line separator or bidi override in a path is replaced.
 - Every member of a multi-member gzip file is read, and trailing bytes that are not a member are an error.
 
-This version is not published and has no git tag.
-
 ## [0.1.0] - 2026-11-09
 
 ### Added
@@ -99,5 +97,3 @@ This version is not published and has no git tag.
 - Memory advice from Max Memory Used. The advice dollars assume the billed duration stays the same, and the report says that is not a forecast.
 - Built-in first-tier rates from the AWS Lambda pricing page, read on 2026-11-09, and a `--prices` file for another quote.
 - Text table and `--json`. Gzip is detected by magic bytes. The function name comes from the log group, a header, or an `aws/lambda/<name>` path.
-
-This version is not published and has no git tag.
