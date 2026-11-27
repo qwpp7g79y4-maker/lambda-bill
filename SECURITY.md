@@ -6,7 +6,7 @@
 | --- | --- |
 | 1.0.x | Yes |
 
-Security fixes go into the latest release only. The crate has no git tag. After a release the tool is in dormant mode: a new version appears only for a reported bug, a request or a security problem, and security always comes first.
+Security fixes go into the latest release only. After a release the tool is in dormant mode: a new version appears only for a reported bug, a request or a security problem, and security always comes first.
 
 ## What lambda-bill does
 
