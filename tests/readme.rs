@@ -391,7 +391,7 @@ fn licenses_changelog_and_toolchain_match_the_package() {
     let cargo = read("Cargo.toml");
     assert!(cargo.contains("rust-version = \"1.85\""));
     assert!(cargo.contains("MIT OR Apache-2.0"));
-    assert!(cargo.contains("version = \"1.0.1\""));
+    assert!(cargo.contains("version = \"1.0.2\""));
     for needle in ["aws-sdk", "reqwest", "hyper", "tokio"] {
         assert!(!cargo.contains(needle), "{needle} in Cargo.toml");
     }

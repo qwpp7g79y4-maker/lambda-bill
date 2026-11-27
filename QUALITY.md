@@ -98,7 +98,7 @@ Every claim of `README.md`, with the test that covers it. Names are from the 202
 | L2 | The quick start file is `examples/sample-report.log` | `quickstart_heredoc_matches_the_sample_file` (`tests/readme.rs`) | tested |
 | L3 | The console examples are what the binary prints | `console_examples_match_the_binary` (`tests/readme.rs`) | tested |
 | L4 | The suite has 273 tests | `the_documents_state_the_real_number_of_tests`, `the_counter_counts_attributes_and_nothing_else` (`tests/quality.rs`) | tested: counts test attributes, not the output of `cargo test` |
-| L5 | Not published, no git tag, no release archive | none | gap: repository fact, not tested |
+| L5 | No git tag, no release archive | none | gap: repository fact, not tested |
 | L6 | File, line and directory limits; symlink rules | `file_larger_than_268435456_bytes`, `line_longer_than_1048576_bytes_is_rejected`, `directory_at_64_levels_is_accepted`, `directory_deeper_than_64_levels_is_an_error`, `directory_symlink_is_skipped`, `explicit_symlink_is_followed` | tested |
 | L7 | `--prices` and `--functions` files have the size limit, checked before the file is read, must be UTF-8, and must be regular files | `oversized_prices_and_functions_exit_2`, `oversized_prices_and_functions_are_refused_without_reading_them` (Linux only), `prices_and_functions_files_must_be_utf8`, `prices_file_at_the_limit_is_not_refused_for_size`, `a_fifo_as_prices_or_functions_file_is_not_a_file_and_does_not_hang` | tested |
 | L8 | A sum that does not fit is `price overflow`, not a panic | `huge_price_is_an_input_error`, `gb_seconds_at_u64_max_does_not_panic`, `a_sum_of_exact_rows_that_does_not_fit_exits_2` | tested |

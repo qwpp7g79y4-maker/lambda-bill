@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "currency": "USD",
   "source": "https://aws.amazon.com/lambda/pricing/",
   "date": "2026-11-09",

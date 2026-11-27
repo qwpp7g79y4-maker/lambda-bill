@@ -24,7 +24,7 @@ cargo install --locked --path .
 lambda-bill --help
 ```
 
-Deze crate is niet gepubliceerd. Installeer vanuit deze kopie, niet vanaf crates.io. Er is nog geen releasearchief: `.github/workflows/release.yml` bouwt archieven met de licentieteksten van derden zodra een versietag wordt gepusht, en er is nog geen tag gepusht.
+Van crates.io: `cargo install lambda-bill`. Er is nog geen releasearchief: `.github/workflows/release.yml` bouwt archieven met de licentieteksten van derden zodra een versietag wordt gepusht, en er is nog geen tag gepusht.
 
 **Ondersteunde systemen.** De testsuite is alleen op Linux x86_64 gedraaid. Een releasebuild daar vraagt glibc 2.34 of nieuwer; de workflow heeft een job die het hoogste glibc-symbool van een releasebuild op Ubuntu 22.04 controleert, en die is nog niet gedraaid. De code is ook gecompileerd en met clippy gecontroleerd voor de doelen Windows (`x86_64-pc-windows-gnu`), macOS (`x86_64-apple-darwin`) en musl (`x86_64-unknown-linux-musl`), maar op die systemen is geen test gedraaid. Een standaarduitvoer die bij de start gesloten of alleen-lezen is, wordt alleen op Linux herkend.
 
@@ -165,7 +165,7 @@ note: advice assumes billed duration stays the same. Lambda gives CPU in proport
 $ lambda-bill --json --arch arm64 --function worker examples/arm-report.log
 {
   "schema_version": 1,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "currency": "USD",
   "source": "https://aws.amazon.com/lambda/pricing/",
   "date": "2026-11-09",
